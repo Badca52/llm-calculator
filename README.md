@@ -8,33 +8,14 @@ adjust a GPU-offload slider.
 
 - Python 3.11+
 - PySide6 6.7+ (installed from `requirements.txt`)
-- The [`pyside6-style-guide`](https://github.com/Badca52/pyside6-style-guide)
-  package, available on your `PYTHONPATH` (see below)
 
-## Install
+## Install & run
 
 ```bash
 git clone https://github.com/Badca52/llm-calculator.git
 cd llm-calculator
 python -m venv .venv && source .venv/bin/activate
 python -m pip install -r requirements.txt
-```
-
-### Styling library
-
-The UI uses a local styling library, `pyside6-style-guide`. Point the app at
-it one of two ways:
-
-- **Env var (recommended):** clone the library and export its `src/` path:
-  ```bash
-  export PYSIDE6_STYLE_GUIDE_SRC=/path/to/pyside6-style-guide/src
-  ```
-- **On `PYTHONPATH`:** install/symlink it anywhere Python can import
-  `pyside6_style_guide` from.
-
-## Run
-
-```bash
 python main.py
 ```
 

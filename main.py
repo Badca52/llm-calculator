@@ -2,12 +2,7 @@
 
 from __future__ import annotations
 
-import os
 import sys
-
-_style_guide_src = os.environ.get("PYSIDE6_STYLE_GUIDE_SRC")
-if _style_guide_src:
-    sys.path.insert(0, _style_guide_src)
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QBrush, QColor, QKeySequence, QShortcut
