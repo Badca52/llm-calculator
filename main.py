@@ -5,15 +5,20 @@ from __future__ import annotations
 import sys
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QBrush, QColor, QKeySequence, QShortcut
+from PySide6.QtGui import QBrush, QColor, QFont, QFontDatabase, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
+    QCheckBox,
+    QComboBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
+    QLineEdit,
+    QMainWindow,
+    QPushButton,
     QSizePolicy,
-    QStyle,
+    QSpinBox,
     QStyledItemDelegate,
     QTableWidget,
     QTableWidgetItem,
@@ -21,27 +26,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from pyside6_style_guide import (
-    BaseWindow,
-    CheckBox,
-    ComboBox,
-    GradientLabel,
-    Heading,
-    MutedText,
-    PasswordInput,
-    PrimaryButton,
-    SectionCard,
-    Slider,
-    SpinBox,
-    StyledApp,
-    TextInput,
-    Theme,
-    ThemeManager,
-)
-
 from calculator import cell_status, effective_config, kv_cache_gb, param_count, vram_gb
 from hf_client import ModelFetcher
 from quantization import BPP, DEFAULT_CONTEXTS, KV_CACHE_BYTES, contexts_for, format_ctx
+from ui_theme import Theme, ThemeManager
+from ui_widgets import GradientLabel, Heading, MutedText, SectionCard, Slider
 
 CELL_COLORS = {
     "green":  QColor(34, 102, 74),    # muted emerald
@@ -82,9 +71,12 @@ class ColoredCellDelegate(QStyledItemDelegate):
         painter.restore()
 
 
-class MainWindow(BaseWindow):
+class MainWindow(QMainWindow):
     def __init__(self) -> None:
-        super().__init__(title="LLM VRAM Calculator", size=(1180, 860))
+        super().__init__()
+        self.setWindowTitle("LLM VRAM Calculator")
+        self.resize(1180, 860)
+        self.setMinimumSize(860, 540)
 
         self._api: dict | None = None
         self._config: dict | None = None
@@ -146,18 +138,22 @@ class MainWindow(BaseWindow):
         row = QHBoxLayout()
         row.setSpacing(10)
 
-        self._url_input = TextInput(
-            placeholder="https://huggingface.co/Qwen/Qwen2.5-7B-Instruct",
+        self._url_input = QLineEdit()
+        self._url_input.setPlaceholderText(
+            "https://huggingface.co/Qwen/Qwen2.5-7B-Instruct",
         )
         self._url_input.setMinimumHeight(36)
         row.addWidget(self._url_input, stretch=3)
 
-        self._token_input = PasswordInput(placeholder="HF token (optional)")
+        self._token_input = QLineEdit()
+        self._token_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self._token_input.setPlaceholderText("HF token (optional)")
         self._token_input.setMinimumHeight(36)
         self._token_input.setMaximumWidth(240)
         row.addWidget(self._token_input, stretch=1)
 
-        self._load_btn = PrimaryButton("Load")
+        self._load_btn = QPushButton("Load")
+        self._load_btn.setObjectName("primary")
         self._load_btn.setMinimumHeight(36)
         self._load_btn.setMinimumWidth(96)
         row.addWidget(self._load_btn)
@@ -198,7 +194,7 @@ class MainWindow(BaseWindow):
         budget_row = QHBoxLayout()
         budget_row.setSpacing(10)
         budget_row.addWidget(self._field_label("GPU VRAM budget"))
-        self._budget_spin = SpinBox()
+        self._budget_spin = QSpinBox()
         self._budget_spin.setRange(1, 1024)
         self._budget_spin.setValue(24)
         self._budget_spin.setSuffix(" GB")
@@ -212,14 +208,14 @@ class MainWindow(BaseWindow):
         kv_row = QHBoxLayout()
         kv_row.setSpacing(10)
         kv_row.addWidget(self._field_label("KV cache dtype"))
-        self._kv_combo = ComboBox()
+        self._kv_combo = QComboBox()
         self._kv_combo.addItems(list(KV_CACHE_BYTES.keys()))
         self._kv_combo.setCurrentText("FP16")
         self._kv_combo.setMinimumWidth(120)
         self._kv_combo.setMinimumHeight(32)
         kv_row.addWidget(self._kv_combo)
 
-        self._kv_cpu_check = CheckBox("CPU KV Cache")
+        self._kv_cpu_check = QCheckBox("CPU KV Cache")
         self._kv_cpu_check.setToolTip(
             "When enabled, the KV cache stays in system RAM instead of GPU VRAM "
             "(llama.cpp --no-kv-offload).\n"
@@ -594,10 +590,20 @@ class MainWindow(BaseWindow):
 
 
 def main() -> int:
-    app = StyledApp(theme=Theme(accent="#22d3ee"))
+    app = QApplication(sys.argv)
+    app.setStyle("Fusion")
+    # Prefer Inter if available; otherwise fall back to the system default.
+    for family in ("Inter", "SF Pro Display", "Segoe UI", "Noto Sans"):
+        if family in QFontDatabase.families():
+            f = QFont(family)
+            f.setPixelSize(13)
+            app.setFont(f)
+            break
+    ThemeManager.instance().apply(Theme(accent="#22d3ee"))
+
     window = MainWindow()
     window.show()
-    return app.run()
+    return app.exec()
 
 
 if __name__ == "__main__":
